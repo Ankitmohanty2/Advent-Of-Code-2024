@@ -3,7 +3,7 @@ const path = require('path');
 
 const getPuzzleValues = async () => {
   try {
-    const filePath = path.join(__dirname, "input.txt");
+    const filePath = path.join(__dirname, "index.txt");
     const data = await fs.readFile(filePath, "utf-8");
 
     const left = [];
