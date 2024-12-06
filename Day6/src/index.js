@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 function main() {
-    const filePath = path.join(__dirname, './input.txt'); // Use input.txt
+    const filePath = path.join(__dirname, './input.txt'); 
     const data = fs.readFileSync(filePath, 'utf8').trim();
     const grid = data.split('\n');
     const R = grid.length;
@@ -25,7 +25,7 @@ function main() {
         for (let o_c = 0; o_c < C; o_c++) {
             let r = startRow;
             let c = startCol;
-            let d = 0; // 0=up, 1=right, 2=down, 3=left
+            let d = 0; 
             const SEEN = new Set();
             const SEEN_RC = new Set();
 
