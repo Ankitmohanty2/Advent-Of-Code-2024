@@ -1,0 +1,2 @@
+First puzzle output: 5702958180383
+Second puzzle output: 92612386119138
