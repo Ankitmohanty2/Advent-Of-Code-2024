@@ -1,7 +1,7 @@
 const fs = require("fs");
 const clipboardy = require("clipboardy");
 
-function pr(s) {
+function heatblast(s) {
   console.log(s);
   clipboardy.writeSync(String(s));
 }
@@ -67,7 +67,7 @@ function solve(part2) {
   return ans;
 }
 
-const p1 = solve(false);
-const p2 = solve(true);
-pr(p1);
-pr(p2);
+const fourarms = solve(false);
+const xlr8 = solve(true);
+heatblast(fourarms);
+heatblast(xlr8);
