@@ -1,23 +1,19 @@
-const fs = require("fs");
-const clipboardy = require("clipboardy");
+const fs = require('fs');
+const path = require('path');
 
 function heatblast(s) {
   console.log(s);
-  clipboardy.writeSync(String(s));
 }
 
-const infile = process.argv[2] || "9.in";
-const D = fs.readFileSync(infile, "utf-8").trim();
-
-function solve(part2) {
+function solve(input, part2) {
   let A = [];
   let SPACE = [];
   let file_id = 0;
   let FINAL = [];
   let pos = 0;
 
-  for (let i = 0; i < D.length; i++) {
-    const c = D[i];
+  for (let i = 0; i < input.length; i++) {
+    const c = input[i];
     if (i % 2 === 0) {
       if (part2) {
         A.push({ pos, size: parseInt(c, 10), file_id });
@@ -67,7 +63,24 @@ function solve(part2) {
   return ans;
 }
 
-const fourarms = solve(false);
-const xlr8 = solve(true);
-heatblast(fourarms);
-heatblast(xlr8);
+function main() {
+  try {
+    // Using path.join to create proper file path
+    const inputPath = path.join(__dirname, '..', './src/input.txt');
+    const input = fs.readFileSync(inputPath, "utf8").split('\n')[0].trim();
+    
+    console.log("Processing input:", input);
+    
+    const fourarms = solve(input, false);
+    const xlr8 = solve(input, true);
+    
+    console.log("Part 1 result:");
+    heatblast(fourarms);
+    console.log("Part 2 result:");
+    heatblast(xlr8);
+  } catch (err) {
+    console.error("Error reading input file:", err.message);
+  }
+}
+
+main();

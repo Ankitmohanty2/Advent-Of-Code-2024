@@ -2,7 +2,6 @@
   "name": "day9",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "test": "node src/index.js",
     "start": "node src/index.js"
