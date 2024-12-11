@@ -53,7 +53,7 @@ function solveTrailhead(grid, start_r, start_c) {
     
     visited.add(`${start_r},${start_c}`);
     dfs(start_r, start_c, 0);
-    return [endPoints.size, totalPaths]; // part1, part2
+    return [endPoints.size, totalPaths]; 
 }
 
 function main() {
