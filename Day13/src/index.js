@@ -1,115 +1,87 @@
 const fs = require('fs');
 const path = require('path');
 
-function print(s) {
-    console.log(s);
+class Equation {
+    constructor(a, b, c) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
 }
 
-function solveLinearSystem(A, B) {
-    const [[a11, a12], [a21, a22]] = A;
-    const [b1, b2] = B;
-    const det = a11 * a22 - a12 * a21;
+function parseData(data) {
+    const regVal = /\+(\d+)/g;
+    const regEq = /=(\d+)/g;
     
-    if (Math.abs(det) < 1e-10) throw new Error('Singular matrix');
+    const values = [...data.matchAll(regVal)].map(m => parseInt(m[1]));
+    const equates = [...data.matchAll(regEq)].map(m => parseInt(m[1]));
+    const equations = [];
     
-    const x1 = (b1 * a22 - b2 * a12) / det;
-    const x2 = (a11 * b2 - a21 * b1) / det;
+    for (let i = 0, j = 0; j < equates.length; i += 4, j += 2) {
+        const e1 = new Equation(values[i], values[i + 2], -equates[j]);
+        const e2 = new Equation(values[i + 1], values[i + 3], -equates[j + 1]);
+        equations.push({ e1, e2 });
+    }
     
-    return [x1, x2];
+    return equations;
 }
 
-function solve(ax, ay, bx, by, px, py, part2) {
-    const P2 = part2 ? BigInt(10000000000000) : BigInt(0);
+function intersection(e1, e2) {
+    const denominator = e1.a * e2.b - e2.a * e1.b;
+    const xnumerator = e1.b * e2.c - e2.b * e1.c;
+    const ynumerator = e2.a * e1.c - e1.a * e2.c;
     
-    try {
-        const A = [[ax, bx], [ay, by]];
-        const B = [Number(BigInt(px) + P2), Number(BigInt(py) + P2)];
-        const [t1, t2] = solveLinearSystem(A, B);
+    if (denominator === 0) {
+        return [-1, -1];
+    }
+    
+    if (xnumerator % denominator === 0 && ynumerator % denominator === 0) {
+        const x = xnumerator / denominator;
+        const y = ynumerator / denominator;
+        return [x, y];
+    }
+    return [-1, -1];
+}
+
+function solve1(equations) {
+    let count = 0;
+    for (const eq of equations) {
+        const [x, y] = intersection(eq.e1, eq.e2);
+        if (x === -1 && y === -1) continue;
+        if (x > 100 || y > 100 || x < 0 || y < 0) continue;
+        count += (x * 3) + y;
+    }
+    return count;
+}
+
+function solve2(equations) {
+    let count = 0;
+    const P2 = Math.pow(10, 13);
+    
+    for (const eq of equations) {
+        const e1 = new Equation(eq.e1.a, eq.e1.b, eq.e1.c - P2);
+        const e2 = new Equation(eq.e2.a, eq.e2.b, eq.e2.c - P2);
         
-        if (t1 >= 0 && t2 >= 0 && 
-            Math.abs(t1 - Math.round(t1)) < 1e-10 && 
-            Math.abs(t2 - Math.round(t2)) < 1e-10) {
-            return 3 * Math.round(t1) + Math.round(t2);
-        }
-    } catch (e) {
-        print(`Linear system failed: ${e.message}`);
+        const [x, y] = intersection(e1, e2);
+        if (x === -1 && y === -1) continue;
+        if (x < 0 || y < 0) continue;
+        count += (x * 3) + y;
     }
-    
-    let best = null;
-    for (let t1 = 0; t1 < 100; t1++) {
-        for (let t2 = 0; t2 < 100; t2++) {
-            const cost = 3 * t1 + t2;
-            const dx = ax * t1 + bx * t2;
-            const dy = ay * t1 + by * t2;
-            
-            if (dx === dy && dx > 0) {
-                const score = dx / cost;
-                if (best === null || score < best[0]) {
-                    best = [score, t1, t2, cost, dx];
-                }
-            }
-        }
-    }
-    
-    if (!best) return 0;
-    
-    const [_score, _t1, _t2, cost, dx] = best;
-    if (dx === 0) return 0;
-    
-    const amt = Number((P2 - BigInt(40000)) / BigInt(dx));
-    const rem_x = Number(BigInt(px) + P2 - BigInt(amt) * BigInt(dx));
-    const rem_y = Number(BigInt(py) + P2 - BigInt(amt) * BigInt(dx));
-    
-    try {
-        const A = [[ax, bx], [ay, by]];
-        const B = [rem_x, rem_y];
-        const [t1, t2] = solveLinearSystem(A, B);
-        
-        if (t1 >= 0 && t2 >= 0 && 
-            Math.abs(t1 - Math.round(t1)) < 1e-10 && 
-            Math.abs(t2 - Math.round(t2)) < 1e-10) {
-            return 3 * Math.round(t1) + Math.round(t2) + amt * cost;
-        }
-    } catch (e) {
-        print(`Second linear system failed: ${e.message}`);
-    }
-    
-    return 0;
+    return count;
 }
 
-const inputPath = path.join(__dirname, 'input.txt');
-const input = fs.readFileSync(inputPath, 'utf8').trim();
+function main() {
+    const startTime = Date.now();
+    
+    const inputPath = path.join(__dirname, 'input.txt');
+    const data = fs.readFileSync(inputPath, 'utf8').trim();
+    
+    const equations = parseData(data);
+    console.log(solve1(equations));
+    console.log(solve2(equations));
+    
+    const endTime = Date.now();
+    console.log("Time taken:", endTime - startTime, "ms");
+}
 
-let part1 = 0;
-let part2 = 0;
-const machines = input.split('\n\n');
-
-machines.forEach((machine, i) => {
-    const [a, b, prize] = machine.split('\n');
-    
-    const aw = a.split(' ');
-    const ax = parseInt(aw[2].split('+')[1].split(',')[0]);
-    const ay = parseInt(aw[3].split('+')[1].split(',')[0]);
-    
-    const bw = b.split(' ');
-    const bx = parseInt(bw[2].split('+')[1].split(',')[0]);
-    const by = parseInt(bw[3].split('+')[1].split(',')[0]);
-    
-    const pw = prize.split(' ');
-    const px = parseInt(pw[1].split('=')[1].split(',')[0]);
-    const py = parseInt(pw[2].split('=')[1]);
-    
-    print(`Processing machine ${i + 1}:`);
-    print(`Input values: ax=${ax}, ay=${ay}, bx=${bx}, by=${by}, px=${px}, py=${py}`);
-    
-    const p1Result = solve(ax, ay, bx, by, px, py, false);
-    const p2Result = solve(ax, ay, bx, by, px, py, true);
-    
-    part1 += p1Result;
-    part2 += p2Result;
-    
-    print(`Machine ${i + 1}: Part1=${p1Result}, Part2=${p2Result}\n`);
-});
-
-print(`Final Part1: ${part1}`);
-print(`Final Part2: ${part2}`);
+main();
