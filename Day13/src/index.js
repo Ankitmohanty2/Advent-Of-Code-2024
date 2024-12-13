@@ -5,10 +5,36 @@ function print(s) {
     console.log(s);
 }
 
-function solve(ax, ay, bx, by, px, py, part2) {
-    const P2 = part2 ? 10000000000000 : 0;
+function solveLinearSystem(A, B) {
+    const [[a11, a12], [a21, a22]] = A;
+    const [b1, b2] = B;
+    const det = a11 * a22 - a12 * a21;
     
-    // Pattern finding approach
+    if (Math.abs(det) < 1e-10) throw new Error('Singular matrix');
+    
+    const x1 = (b1 * a22 - b2 * a12) / det;
+    const x2 = (a11 * b2 - a21 * b1) / det;
+    
+    return [x1, x2];
+}
+
+function solve(ax, ay, bx, by, px, py, part2) {
+    const P2 = part2 ? BigInt(10000000000000) : BigInt(0);
+    
+    try {
+        const A = [[ax, bx], [ay, by]];
+        const B = [Number(BigInt(px) + P2), Number(BigInt(py) + P2)];
+        const [t1, t2] = solveLinearSystem(A, B);
+        
+        if (t1 >= 0 && t2 >= 0 && 
+            Math.abs(t1 - Math.round(t1)) < 1e-10 && 
+            Math.abs(t2 - Math.round(t2)) < 1e-10) {
+            return 3 * Math.round(t1) + Math.round(t2);
+        }
+    } catch (e) {
+        print(`Linear system failed: ${e.message}`);
+    }
+    
     let best = null;
     for (let t1 = 0; t1 < 100; t1++) {
         for (let t2 = 0; t2 < 100; t2++) {
@@ -25,30 +51,27 @@ function solve(ax, ay, bx, by, px, py, part2) {
         }
     }
     
-    if (best === null) {
-        return 0;
-    }
+    if (!best) return 0;
     
-    const [_score, t1, t2, cost, dx] = best;
-    if (dx === 0) {
-        return 0;
-    }
+    const [_score, _t1, _t2, cost, dx] = best;
+    if (dx === 0) return 0;
     
-    const amt = Math.floor((P2 - 40000) / dx);
-    const rem_x = px + P2 - amt * dx;
-    const rem_y = py + P2 - amt * dx;
+    const amt = Number((P2 - BigInt(40000)) / BigInt(dx));
+    const rem_x = Number(BigInt(px) + P2 - BigInt(amt) * BigInt(dx));
+    const rem_y = Number(BigInt(py) + P2 - BigInt(amt) * BigInt(dx));
     
-    // Linear equation solving for remainder
-    const det = ax * by - ay * bx;
-    if (det !== 0) {
-        const t1_rem = (by * rem_x - bx * rem_y) / det;
-        const t2_rem = (-ay * rem_x + ax * rem_y) / det;
+    try {
+        const A = [[ax, bx], [ay, by]];
+        const B = [rem_x, rem_y];
+        const [t1, t2] = solveLinearSystem(A, B);
         
-        if (t1_rem >= 0 && t2_rem >= 0 && 
-            Math.abs(t1_rem - Math.round(t1_rem)) < 1e-10 && 
-            Math.abs(t2_rem - Math.round(t2_rem)) < 1e-10) {
-            return 3 * Math.round(t1_rem) + Math.round(t2_rem) + amt * cost;
+        if (t1 >= 0 && t2 >= 0 && 
+            Math.abs(t1 - Math.round(t1)) < 1e-10 && 
+            Math.abs(t2 - Math.round(t2)) < 1e-10) {
+            return 3 * Math.round(t1) + Math.round(t2) + amt * cost;
         }
+    } catch (e) {
+        print(`Second linear system failed: ${e.message}`);
     }
     
     return 0;
@@ -76,14 +99,17 @@ machines.forEach((machine, i) => {
     const px = parseInt(pw[1].split('=')[1].split(',')[0]);
     const py = parseInt(pw[2].split('=')[1]);
     
+    print(`Processing machine ${i + 1}:`);
+    print(`Input values: ax=${ax}, ay=${ay}, bx=${bx}, by=${by}, px=${px}, py=${py}`);
+    
     const p1Result = solve(ax, ay, bx, by, px, py, false);
     const p2Result = solve(ax, ay, bx, by, px, py, true);
     
     part1 += p1Result;
     part2 += p2Result;
     
-    print(`Machine ${i + 1}: Part1=${p1Result}, Part2=${p2Result}`);
+    print(`Machine ${i + 1}: Part1=${p1Result}, Part2=${p2Result}\n`);
 });
 
-print(part1);
-print(part2);
+print(`Final Part1: ${part1}`);
+print(`Final Part2: ${part2}`);
