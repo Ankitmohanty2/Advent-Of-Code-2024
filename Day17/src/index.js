@@ -6,15 +6,21 @@ const DAY_DESC = 'Day 17: Chronospatial Computer';
 
 function decode(a, b, c, val) {
     if (val <= 3) return val;
-    else if (val === 4) return a;
-    else if (val === 5) return b;
-    else if (val === 6) return c;
+    else if (val === 4) return Number(a);
+    else if (val === 5) return Number(b);
+    else if (val === 6) return Number(c);
     else throw new Error('Invalid decode value');
 }
 
 function runProgram(a, b, c, prog) {
     const ret = [];
     let i = 0;
+    
+    // Convert to BigInt if needed
+    a = BigInt(a);
+    b = Number(b);
+    c = Number(c);
+
     while (i < prog.length) {
         let next_i = i + 2;
         const opcode = prog[i];
@@ -22,7 +28,7 @@ function runProgram(a, b, c, prog) {
 
         switch (opcode) {
             case 0:
-                a = Math.floor(a / Math.pow(2, decode(a, b, c, operand)));
+                a = a >> BigInt(decode(a, b, c, operand)); // Use bit shift instead of division
                 break;
             case 1:
                 b = b ^ operand;
@@ -31,7 +37,7 @@ function runProgram(a, b, c, prog) {
                 b = decode(a, b, c, operand) % 8;
                 break;
             case 3:
-                if (a !== 0) {
+                if (a !== 0n) {
                     next_i = operand;
                 }
                 break;
@@ -39,13 +45,13 @@ function runProgram(a, b, c, prog) {
                 b = b ^ c;
                 break;
             case 5:
-                ret.push(decode(a, b, c, operand) % 8);
+                ret.push(Number(decode(a, b, c, operand) % 8n));
                 break;
             case 6:
-                b = Math.floor(a / Math.pow(2, decode(a, b, c, operand)));
+                b = Number(a >> BigInt(decode(a, b, c, operand))); // Use bit shift
                 break;
             case 7:
-                c = Math.floor(a / Math.pow(2, decode(a, b, c, operand)));
+                c = Number(a >> BigInt(decode(a, b, c, operand))); // Use bit shift
                 break;
         }
         i = next_i;
@@ -63,26 +69,24 @@ function calc(values, mode) {
         const ret = runProgram(a, b, c, prog);
         return ret.join(",");
     } else {
-        const todo = [[prog, prog.length - 1, 0]];
-        while (todo.length > 0) {
-            const [currentProg, off, val] = todo.shift();
+        // Optimize part 2 with a different approach
+        let val = 0n;
+        const target = prog.slice(-1)[0];
+        
+        // Build the value incrementally
+        for (let i = 0; i < prog.length; i++) {
             for (let cur = 0; cur < 8; cur++) {
-                const next_val = (val << 3) + cur;
-                const result = runProgram(next_val, 0, 0, currentProg);
-                if (arraysEqual(result, currentProg.slice(off))) {
-                    if (off === 0) {
-                        return next_val;
-                    }
-                    todo.push([currentProg, off - 1, next_val]);
+                const testVal = (val << 3n) + BigInt(cur);
+                const result = runProgram(testVal, 0, 0, prog.slice(0, i + 1));
+                
+                if (result[result.length - 1] === target) {
+                    val = testVal;
+                    break;
                 }
             }
         }
+        return val.toString();
     }
-    return null;
-}
-
-function arraysEqual(a, b) {
-    return a.length === b.length && a.every((val, idx) => val === b[idx]);
 }
 
 function test() {
@@ -102,16 +106,11 @@ function test() {
         "",
         "Program: 0,3,5,4,3,0"
     ];
-    console.log("Test 2:", calc(test2, 2) === 117440);
-}
-
-function run(values) {
-    console.log("Part 1:", calc(values, 1));
-    console.log("Part 2:", calc(values, 2));
+    console.log("Test 2:", calc(test2, 2) === '117440');
 }
 
 try {
-    const inputPath = path.join(__dirname, 'input.txt');
+    const inputPath = path.join(__dirname, './input.txt');
     console.log(`Using '${inputPath}' as input file:`);
     
     if (!fs.existsSync(inputPath)) {
@@ -128,7 +127,8 @@ try {
     if (process.argv.includes('--test')) {
         test();
     } else {
-        run(values);
+        console.log("Part 1:", calc(values, 1));
+        console.log("Part 2:", calc(values, 2));
     }
 
 } catch (error) {
