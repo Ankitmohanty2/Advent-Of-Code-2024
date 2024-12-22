@@ -1,69 +1,59 @@
-function mix(x, y) {
-    return x ^ y;
-}
-
-function prune(x) {
-    return x % 16777216;
-}
-
-function prices(x) {
-    let ans = [x];
-    for (let i = 0; i < 2000; i++) {
-        let newX = x;
-        newX = prune(mix(newX, 64 * newX));
-        newX = prune(mix(newX, Math.floor(newX / 32)));
-        newX = prune(mix(newX, newX * 2048));
-        ans.push(newX);
-        x = newX;
-    }
-    return ans;
-}
-
-function changes(P) {
-    let result = [];
-    for (let i = 0; i < P.length - 1; i++) {
-        result.push(P[i + 1] - P[i]);
-    }
-    return result;
-}
-
-function getScores(P, C) {
-    let ANS = {};
-    for (let i = 0; i < C.length - 3; i++) {
-        let pattern = `${C[i]},${C[i + 1]},${C[i + 2]},${C[i + 3]}`;
-        if (!(pattern in ANS)) {
-            ANS[pattern] = P[i + 4];
-        }
-    }
-    return ANS;
-}
-
-function solve(input) {
-    let p1 = 0;
-    let SCORE = {};
-    
-    const lines = input.trim().split('\n');
-    for (let line of lines) {
-        let P = prices(parseInt(line));
-        p1 += P[P.length - 1];
-        P = P.map(x => x % 10);
-        let C = changes(P);
-        let S = getScores(P, C);
-        
-        for (let k in S) {
-            SCORE[k] = (SCORE[k] || 0) + S[k];
-        }
-    }
-    
-    console.log(p1);
-    console.log(Math.max(...Object.values(SCORE)));
-}
-
 const fs = require('fs');
-try {
-    const input = fs.readFileSync('./src/input.txt', 'utf8');
-    solve(input);
-} catch (err) {
-    console.error('Error reading input file:', err);
-    process.exit(1);
+
+function loadInput(filename) {
+    return fs.readFileSync(filename, 'utf8')
+        .trim()
+        .split('\n')
+        .map(Number);
 }
+
+function generateSecrets(num) {
+    let one = num % 10;
+    let changes = [];
+    let consecutives = new Map();
+
+    for (let i = 0; i < 3; i++) {
+        num = (num ^ (num << 6)) & 16777215;
+        num = (num ^ (num >> 5)) & 16777215;
+        num = (num ^ (num << 11)) & 16777215;
+        changes.push(num % 10 - one);
+        one = num % 10;
+        if (changes.length > 4) changes.shift();
+    }
+
+    for (let i = 0; i < 1997; i++) {
+        num = (num ^ (num << 6)) & 16777215;
+        num = (num ^ (num >> 5)) & 16777215;
+        num = (num ^ (num << 11)) & 16777215;
+        changes.push(num % 10 - one);
+        one = num % 10;
+        if (changes.length > 4) changes.shift();
+        
+        let key = changes.toString();
+        if (!consecutives.has(key)) {
+            consecutives.set(key, one);
+        }
+    }
+
+    return [num, consecutives];
+}
+
+function main() {
+    const secrets = loadInput('./src/input.txt');
+    let part1 = 0;
+    let part2 = new Map();
+
+    for (let num of secrets) {
+        const [newNum, consecutives] = generateSecrets(num);
+        part1 += newNum;
+
+        for (let [fourTuple, banana] of consecutives) {
+            part2.set(fourTuple, (part2.get(fourTuple) || 0) + banana);
+        }
+    }
+
+    console.log(`Part 1: ${part1}`);
+    console.log(`Part 2: ${Math.max(...part2.values())}`);
+}
+
+main();
