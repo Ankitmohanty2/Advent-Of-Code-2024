@@ -7,14 +7,18 @@ function fits(key, lock) {
     const C = key[0].length;
     if (C !== lock[0].length) return false;
 
+    let hasOverlap = false;
     for (let r = 0; r < R; r++) {
         for (let c = 0; c < C; c++) {
             if (key[r][c] === '#' && lock[r][c] === '#') {
                 return false;
             }
+            if (key[r][c] === '#' || lock[r][c] === '#') {
+                hasOverlap = true;
+            }
         }
     }
-    return true;
+    return hasOverlap;
 }
 
 try {
@@ -25,26 +29,20 @@ try {
     const locks = [];
 
     for (const shape of shapes) {
-        const G = shape.split('\n');
-        const R = G.length;
-        const C = G[0].length;
-        
-        const grid = Array(R).fill().map((_, r) => 
-            Array(C).fill().map((_, c) => G[r][c])
-        );
-
+        const lines = shape.split('\n');
         let isKey = true;
-        for (let c = 0; c < C; c++) {
-            if (grid[0][c] === '#') {
+        
+        for (let c = 0; c < lines[0].length; c++) {
+            if (lines[0][c] === '#') {
                 isKey = false;
                 break;
             }
         }
 
         if (isKey) {
-            keys.push(G);
+            keys.push(lines);
         } else {
-            locks.push(G);
+            locks.push(lines);
         }
     }
 
